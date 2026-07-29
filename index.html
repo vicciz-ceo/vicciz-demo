@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Kiipling — Proactive trip management (demo)</title>
+    <meta
+      name="description"
+      content="A 64-second demo: Kiipling catches a flight delay, drafts a fix for every downstream booking, and executes each one the moment it's approved."
+    />
+    <!-- Demo subdomain: keep it out of search results until launch. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="vicciz-mark.svg" />
+
+    <meta property="og:type" content="video.other" />
+    <meta property="og:title" content="Kiipling — Proactive trip management" />
+    <meta
+      property="og:description"
+      content="One flight delay. Three broken bookings. Three taps to fix the whole day."
+    />
+    <meta property="og:image" content="https://demo.vicciz.com/poster.jpg" />
+    <meta property="og:url" content="https://demo.vicciz.com/" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Lora:wght@500;600;700&display=swap"
+    />
+
+    <style>
+      /* Brand tokens mirrored from the Vicciz app's dark theme (index.css). */
+      :root {
+        --navy: rgb(22 51 90);
+        --gold: rgb(224 137 44);
+        --bg: rgb(11 18 32);
+        --surface: rgb(19 32 58);
+        --text: rgb(255 255 255);
+        --text-secondary: rgb(255 255 255 / 0.72);
+        --text-muted: rgb(255 255 255 / 0.5);
+        --hairline: rgb(255 255 255 / 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        background: var(--bg);
+        /* Warm off-centre glow behind the device, echoing the logo's radial warmth. */
+        background-image:
+          radial-gradient(
+            60rem 40rem at 78% 12%,
+            rgb(224 137 44 / 0.13),
+            transparent 62%
+          ),
+          radial-gradient(
+            52rem 42rem at 12% 88%,
+            rgb(22 51 90 / 0.55),
+            transparent 65%
+          );
+        /* Deliberately not `background-attachment: fixed` — it repaints badly
+           on mobile and clips the gradient to the viewport rather than the
+           document. */
+        color: var(--text);
+        font-family:
+          Lato,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        font-weight: 400;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .page {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: clamp(1.75rem, 4vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem)
+          clamp(3rem, 6vw, 5rem);
+      }
+
+      /* ── Masthead ─────────────────────────────────────────────────────── */
+
+      .masthead {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin-bottom: clamp(2rem, 5vw, 3.5rem);
+      }
+
+      .masthead img {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.6rem;
+      }
+
+      .masthead .wordmark {
+        font-family: Lora, Georgia, serif;
+        font-weight: 600;
+        font-size: 1.2rem;
+        letter-spacing: 0.01em;
+      }
+
+      .masthead .tag {
+        margin-left: auto;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--gold);
+        border: 1px solid rgb(224 137 44 / 0.4);
+        border-radius: 999px;
+        padding: 0.3rem 0.75rem;
+        white-space: nowrap;
+      }
+
+      /* ── Two-column layout ────────────────────────────────────────────── */
+
+      /* Single column on phones, in DOM order: headline → player → chapters,
+         so the video is reachable without scrolling past the whole chapter
+         list. Desktop promotes it to two columns via named areas. */
+      .layout {
+        display: grid;
+        gap: clamp(2rem, 5vw, 3rem);
+        align-items: center;
+      }
+
+      @media (min-width: 900px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-areas:
+            "intro    device"
+            "chapters device";
+          column-gap: clamp(2.5rem, 6vw, 4.5rem);
+          row-gap: 2.25rem;
+        }
+
+        .intro {
+          grid-area: intro;
+          align-self: end;
+        }
+
+        .chapters {
+          grid-area: chapters;
+          align-self: start;
+        }
+
+        .device-column {
+          grid-area: device;
+        }
+      }
+
+      .eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin: 0 0 0.9rem;
+      }
+
+      h1 {
+        font-family: Lora, Georgia, serif;
+        font-weight: 600;
+        font-size: clamp(2rem, 5.2vw, 3.1rem);
+        line-height: 1.14;
+        letter-spacing: -0.015em;
+        margin: 0 0 1.1rem;
+        text-wrap: balance;
+      }
+
+      h1 em {
+        font-style: normal;
+        color: var(--gold);
+      }
+
+      .lede {
+        font-size: clamp(1.02rem, 1.6vw, 1.14rem);
+        color: var(--text-secondary);
+        /* Spacing below comes from the grid row-gap, not a margin — the
+           element after the lede differs between the mobile and desktop
+           layouts. */
+        margin: 0;
+        max-width: 34rem;
+      }
+
+      /* ── Chapters ─────────────────────────────────────────────────────── */
+
+      .chapters h2 {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 0.85rem;
+      }
+
+      .chapter-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        max-width: 30rem;
+      }
+
+      .chapter {
+        width: 100%;
+        display: flex;
+        align-items: baseline;
+        gap: 0.85rem;
+        text-align: left;
+        font-family: inherit;
+        font-size: 0.96rem;
+        color: var(--text-secondary);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 0.6rem;
+        padding: 0.5rem 0.75rem;
+        min-height: 2.75rem; /* 44px touch target */
+        cursor: pointer;
+        transition:
+          background-color 140ms ease,
+          border-color 140ms ease,
+          color 140ms ease;
+      }
+
+      .chapter:hover {
+        background: rgb(255 255 255 / 0.05);
+        border-color: var(--hairline);
+        color: var(--text);
+      }
+
+      .chapter:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+      }
+
+      .chapter[aria-current="true"] {
+        background: rgb(224 137 44 / 0.12);
+        border-color: rgb(224 137 44 / 0.42);
+        color: var(--text);
+      }
+
+      .chapter .time {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: var(--gold);
+        min-width: 2.6rem;
+      }
+
+      /* ── Device ───────────────────────────────────────────────────────── */
+
+      .device-column {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      /* The bezel shrink-wraps the video, so the aspect ratio lives on the
+         <video> itself — sizing the padded wrapper instead would make its
+         content box a slightly different ratio and crop the frame. */
+      .device {
+        width: max-content;
+        border-radius: 1.9rem;
+        padding: 0.4rem;
+        background: linear-gradient(
+          160deg,
+          rgb(255 255 255 / 0.16),
+          rgb(255 255 255 / 0.04)
+        );
+        box-shadow:
+          0 1.5rem 3.5rem rgb(0 0 0 / 0.55),
+          0 0 0 1px rgb(255 255 255 / 0.06),
+          0 0 4rem rgb(224 137 44 / 0.1);
+      }
+
+      .device video {
+        display: block;
+        /* Matches the recording's native 500x1080 phone frame. */
+        aspect-ratio: 500 / 1080;
+        width: min(19rem, 78vw);
+        height: auto;
+        border-radius: 1.55rem;
+        background: var(--bg);
+        object-fit: contain;
+      }
+
+      /* Must follow the base rule above (equal specificity, later wins): on
+         desktop the device is driven off viewport height so the player
+         controls and runtime caption always sit above the fold. */
+      @media (min-width: 900px) {
+        .device video {
+          width: auto;
+          height: min(42rem, calc(100vh - 14rem));
+          height: min(42rem, calc(100svh - 14rem));
+        }
+      }
+
+      .device video::cue {
+        font-family: Lato, sans-serif;
+        font-size: 0.7em;
+        background: rgb(11 18 32 / 0.82);
+      }
+
+      .runtime {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+
+      /* ── Footer ───────────────────────────────────────────────────────── */
+
+      footer {
+        margin-top: clamp(2.5rem, 6vw, 4.5rem);
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--hairline);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem 1.5rem;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      footer a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-bottom: 1px solid rgb(224 137 44 / 0.45);
+        padding-bottom: 1px;
+      }
+
+      footer a:hover {
+        color: var(--text);
+      }
+
+      footer a:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 3px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <img src="vicciz-mark.svg" alt="" />
+        <span class="wordmark">Kiipling</span>
+        <span class="tag">Product demo</span>
+      </header>
+
+      <main class="layout">
+        <div class="intro">
+          <p class="eyebrow">Proactive trip management</p>
+          <h1>One delay breaks the day. <em>Three taps rebuild it.</em></h1>
+          <p class="lede">
+            A flight slips two hours. The rental car, the hotel check-in and the
+            dinner reservation are all about to break. Kiipling spots it first,
+            drafts a fix for each one, and executes the moment you approve.
+          </p>
+        </div>
+
+        <div class="device-column">
+          <div class="device">
+            <video
+              id="demo"
+              controls
+              playsinline
+              preload="metadata"
+              poster="poster.jpg"
+              aria-label="Kiipling product demo video"
+            >
+              <source src="kiipling-demo.mp4" type="video/mp4" />
+              <!-- Not `default`: the captions overlay the phone UI, which is
+                   the thing the demo exists to show. The player's CC control
+                   turns them on, and browsers honour a standing user
+                   preference for captions regardless. -->
+              <track
+                kind="captions"
+                src="kiipling-demo.en.vtt"
+                srclang="en"
+                label="English"
+              />
+              Your browser can't play embedded video.
+              <a href="kiipling-demo.mp4"
+                >Download the demo (MP4, 3.8&nbsp;MB)</a
+              >.
+            </video>
+          </div>
+          <p class="runtime">1 min 4 sec · sound on</p>
+        </div>
+
+        <nav class="chapters" aria-label="Jump to a moment in the demo">
+          <h2>Jump to</h2>
+          <ul class="chapter-list" id="chapters">
+            <li>
+              <button class="chapter" type="button" data-time="0">
+                <span class="time">0:00</span>
+                <span>A trip that looks fine</span>
+              </button>
+            </li>
+            <li>
+              <button class="chapter" type="button" data-time="6">
+                <span class="time">0:06</span>
+                <span>Kiipling catches the delay</span>
+              </button>
+            </li>
+            <li>
+              <button class="chapter" type="button" data-time="18">
+                <span class="time">0:18</span>
+                <span>Approve the rental car</span>
+              </button>
+            </li>
+            <li>
+              <button class="chapter" type="button" data-time="25.9">
+                <span class="time">0:26</span>
+                <span>Approve the hotel check-in</span>
+              </button>
+            </li>
+            <li>
+              <button class="chapter" type="button" data-time="32.4">
+                <span class="time">0:32</span>
+                <span>Approve the dinner table</span>
+              </button>
+            </li>
+            <li>
+              <button class="chapter" type="button" data-time="49.9">
+                <span class="time">0:50</span>
+                <span>Firefighting → proactive</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </main>
+
+      <footer>
+        <span>© Kiipling</span>
+        <a href="https://vicciz.com">vicciz.com</a>
+        <a href="kiipling-demo.mp4" download>Download MP4</a>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        var video = document.getElementById("demo");
+        var buttons = Array.prototype.slice.call(
+          document.querySelectorAll(".chapter"),
+        );
+        if (!video || !buttons.length) return;
+
+        var times = buttons.map(function (button) {
+          return parseFloat(button.dataset.time);
+        });
+
+        buttons.forEach(function (button) {
+          button.addEventListener("click", function () {
+            video.currentTime = parseFloat(button.dataset.time);
+            var played = video.play();
+            // Autoplay-with-sound can be refused; the seek still lands, so a
+            // rejected promise is not an error worth surfacing.
+            if (played && typeof played.catch === "function")
+              played.catch(function () {});
+          });
+        });
+
+        // Highlight whichever chapter the playhead is currently inside.
+        var activeIndex = -1;
+        video.addEventListener("timeupdate", function () {
+          var index = 0;
+          for (var i = 0; i < times.length; i++) {
+            if (video.currentTime >= times[i]) index = i;
+          }
+          if (index === activeIndex) return;
+          activeIndex = index;
+          buttons.forEach(function (button, i) {
+            if (i === index) button.setAttribute("aria-current", "true");
+            else button.removeAttribute("aria-current");
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
